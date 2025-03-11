@@ -3,6 +3,7 @@ type Reminder = {
     title: string;
     description?: string;
     date: Date;
+    completed: boolean;
 };
 
 class ReminderDatabase {
@@ -12,11 +13,23 @@ class ReminderDatabase {
         if (this.reminders.has(id)) {
             throw new Error('Reminder with this ID already exists');
         }
-        this.reminders.set(id, { id, title, date, description });
+        this.reminders.set(id, { id, title, date, description, completed: false });
     }
 
     exists(id: string): boolean {
         return this.reminders.has(id);
+    }
+
+    markReminderAsCompleted(id: string): void {
+        const reminder = this.reminders.get(id);
+        if (!reminder) throw new Error("Reminder not found");
+        reminder.completed = true;
+    }
+
+    unmarkReminderAsCompleted(id: string): void {
+        const reminder = this.reminders.get(id);
+        if (!reminder) throw new Error("Reminder not found");
+        reminder.completed = false;
     }
 
     getAllReminders(): Reminder[] {
@@ -27,8 +40,18 @@ class ReminderDatabase {
         return this.reminders.get(id) || null;
     }
 
-    removeReminder(id: string): boolean {
-        return this.reminders.delete(id);
+    getAllRemindersMarkedAsCompleted(): Reminder[] {
+        return Array.from(this.reminders.values()).filter(r => r.completed);
+    }
+
+    getAllRemindersNotMarkedAsCompleted(): Reminder[] {
+        return Array.from(this.reminders.values()).filter(r => !r.completed);
+    }
+
+    getAllRemindersDueByToday(): Reminder[] {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return Array.from(this.reminders.values()).filter(r => r.date <= today);
     }
 
     updateReminder(id: string, title?: string, date?: Date, description?: string): boolean {
@@ -44,9 +67,14 @@ class ReminderDatabase {
         });
         return true;
     }
+
+    removeReminder(id: string): boolean {
+        return this.reminders.delete(id);
+    }
 }
 
 // Example usage
 const reminderDB = new ReminderDatabase();
 reminderDB.createReminder("1", "Doctor Appointment", new Date("2025-03-15"), "Visit Dr. Smith at 10 AM");
 console.log(reminderDB.getAllReminders());
+reminderDB.markReminderAsCompleted("1");
